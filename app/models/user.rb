@@ -4,6 +4,10 @@ class User < ActiveRecord::Base
     def with_match_data
       select('users.*, matches.created_at AS match_created_at')
     end
+
+    def count(column_name = :all)
+      super
+    end
   end
 
   def match_created_at

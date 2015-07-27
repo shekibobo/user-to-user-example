@@ -69,7 +69,7 @@ RSpec.describe User, type: :model do
           expect(User.find(child.id).match_created_at).to be_nil
         end
 
-        it 'can still be chained with other queries' do
+        it 'can still be counted' do
           expect(matched_users.with_match_data.count).to eq 1
         end
       end
