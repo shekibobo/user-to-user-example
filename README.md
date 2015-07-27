@@ -23,28 +23,32 @@ describe User do
       let(:parent) { create(:user) }
       let(:child) { create(:user) }
 
-      it "adds the parent user to the matched users of the child user" do
+      it "adds a child to the parent's matched_users collection" do
         expect(parent.matched_users).to be_empty
-        expect(child.matched_users).to be_empty
-
         parent.matched_users.replace [child]
-
         expect(parent.reload.matched_users).to eq [child]
+      end
+
+      it "adds parent to the child's matched_users collection" do
+        expect(child.matched_users).to be_empty
+        parent.matched_users.replace [child]
         expect(child.reload.matched_users).to eq [parent]
       end
     end
 
     context "when removing users" do
       let(:parent) { create(:user, matched_users: [child]) }
-      let(:child) { create(:user) }
+      let(:child) { create(:user, matched_users: [parent]) }
 
-      it "removes parent user from matched users of child user" do
+      it "removes the child from the parent's matched_users collection" do
         expect(parent.matched_users).to eq [child]
-        expect(child.matched_users).to eq [parent]
-
         parent.matched_users.replace []
-
         expect(parent.reload.matched_users).to be_empty
+      end
+
+      it "removes parent from the child's matched_users collection" do
+        expect(child.matched_users).to eq [parent]
+        parent.matched_users.replace []
         expect(child.reload.matched_users).to be_empty
       end
     end
@@ -69,5 +73,10 @@ end
 class Match < ActiveRecord::Base
   belongs_to :user
   belongs_to :matched_user, class_name: "User"
+end
+
+class User < ActiveRecord::Base
+  has_many :matches
+  has_many :matched_users, through: :matches, class_name: "User"
 end
 ```
