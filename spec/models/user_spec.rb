@@ -17,18 +17,6 @@ RSpec.describe User, type: :model do
         parent.matched_users.replace [child]
         expect(child.reload.matched_users).to match_array [parent]
       end
-
-      it "doesn't add matched_user to the parent if it exists already" do
-        parent.matched_users.replace [child]
-        parent.matched_users << child
-        expect(parent.reload.matched_users).to match_array [child]
-      end
-
-      it "doesn't add matched_user to the child if it exists already" do
-        parent.matched_users.replace [child]
-        parent.matched_users << child
-        expect(child.reload.matched_users).to match_array [parent]
-      end
     end
 
     context 'when removing users' do

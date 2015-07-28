@@ -1,6 +1,6 @@
 class User < ActiveRecord::Base
   has_many :matches
-  has_many :matched_users, -> { uniq }, through: :matches, class_name: 'User', dependent: :destroy do
+  has_many :matched_users, through: :matches, class_name: 'User', dependent: :destroy do
     def with_match_data
       select('users.*, matches.created_at AS match_created_at')
     end

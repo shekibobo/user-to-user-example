@@ -34,18 +34,6 @@ describe User do
         parent.matched_users.replace [child]
         expect(child.reload.matched_users).to match_array [parent]
       end
-
-      it "doesn't add matched_user to the parent if it exists already" do
-        parent.matched_users.replace [child]
-        parent.matched_users << child
-        expect(parent.reload.matched_users).to match_array [child]
-      end
-
-      it "doesn't add matched_user to the child if it exists already" do
-        parent.matched_users.replace [child]
-        parent.matched_users << child
-        expect(child.reload.matched_users).to match_array [parent]
-      end
     end
 
     context "when removing users" do
@@ -89,11 +77,11 @@ end
 
 class User < ActiveRecord::Base
   has_many :matches
-  has_many :matched_users, -> { uniq }, through: :matches, class_name: "User"
+  has_many :matched_users, through: :matches, class_name: "User"
 end
 ```
 
-At this point, we'll have four passing tests (where we assert the child is added or removed from the parent's collection) and two failing tests (where the parent is added or removed from the child's collection). So cool, we're half way there.
+At this point, we'll have two passing tests (where we assert the child is added or removed from the parent's collection) and two failing tests (where the parent is added or removed from the child's collection). So cool, we're half way there.
 
 Next we'll need to add callbacks to the `Match` model to automatically set up an inverse `match` object for each new match that's created, but only if one doesn't already exist yet:
 
