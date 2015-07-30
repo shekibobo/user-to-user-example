@@ -3,9 +3,9 @@ Bi-Directional and Self-Referential Associations in Rails
 
 I've been working on an application that works to match users together based on a complex set of criteria (read: big slow database query and in-memory processing). The core usage of the application revolves around these user matches, so I want to make sure that either the algorithm will run very fast or can be cached so that it's not run every time a user visits their matches page.
 
-An additional requirement for our matches is that a match for one user also needs to be a match for the other user: `f(x) ∋ y && f(y) ∋ x`, and it always needs to stay in sync from both sides of the relationship. The algorithm mostly handles that, but we also care about some of the metadata behind a match, like how long users have been considered a match.
+The most important requirement for our matches is that a match for one user also needs to be a match for the other user. Formally, `∀ x,y ∈ Users: f(x) ∋ y -> f(y) ∋ x`: for all *users* *x* and *y*, if *x*'s *matched_users* contains *y*, then *y*'s *matched_users* must also contain *x*. It should automatically stay in sync from both sides of the relationship. The matching algorithm will do that (slowly), but we also care about some of the metadata behind a match, like how long users have been considered a match.
 
-To solve this problem and meet all of the requirements, we can create a bi-directional, self-referential, self-syncing, many-to-many association between users using a `has_many :through` association with a join model.
+To solve this problem and meet all of the requirements, we can create a bi-directional, self-referential, self-syncing, many-to-many association between users using a `has_many :through` association with a join model to keep track of a user's matches.
 
 Lets start by creating our join model, `Match`, to belong to users via the `user_id` and `matched_user_id` columns:
 
