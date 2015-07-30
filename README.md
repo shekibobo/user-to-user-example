@@ -10,6 +10,7 @@ To solve this problem and meet all of the requirements, we can create a bi-direc
 Lets start by creating our join model, `Match`, to belong to users via the `user_id` and `matched_user_id` columns:
 
 ```ruby
+# db/migrations/create_matches.rb
 class CreateMatches < ActiveRecord::Migration
   def change
     create_table :matches do |t|
@@ -21,6 +22,7 @@ class CreateMatches < ActiveRecord::Migration
   end
 end
 
+# app/models/match.rb
 class Match < ActiveRecord::Base
   belongs_to :user
   belongs_to :matched_user, class_name: "User"
@@ -30,6 +32,7 @@ end
 And then add our `has_many` and `has_many :through` associations to our `User` model:
 
 ```ruby
+# app/models/user.rb
 class User < ActiveRecord::Base
   has_many :matches
   has_many :matched_users, through: :matches
@@ -54,6 +57,7 @@ bob.matched_users # => []
 But we want to make sure that any time Alice is matched with  Bob, Bob also is matched with Alice using the same `matched_users` API. In order to do this, we'll add an `after_create` and an `after_destroy` callback to the `Match` model. Any time a match is added or removed, we'll create or destroy an inverse record, respectively:
 
 ```ruby
+# app/models/match.rb
 class Match < ActiveRecord::Base
   belongs_to :user
   belongs_to :matched_user, class_name: "User"
@@ -107,6 +111,7 @@ Even though we have an `after_destroy` callback set up, Alice is still in Bob's 
 So in order to make sure we maintain the bi-directional integrity of the association, we need to change the dependent strategy on the `User#has_many` association so that it actually calls `destroy` when we modify via association methods:
 
 ```ruby
+# app/models/user.rb
 class User < ActiveRecord::Base
   has_many :matches
   has_many :matched_users, through: :matches, dependent: :destroy
@@ -125,6 +130,7 @@ bob.matched_users # => []
 With this setup, I can judiciously run my matching algorithm for a user only when it makes sense to do it (e.g. after they update their profile), and all users' matches will be automatically kept in sync without having to re-run the match algorithm for everyone. All user matches and unmatches will automatically be reciprocated when I make the change on a single user record. So now, instead of a controller that looks like this:
 
 ```ruby
+# app/controllers/matches_controller.rb
 def index
   @matched_users = MatchMaker.matches_for(current_user).page(params[:page]) # takes over 1 second
 end
@@ -133,6 +139,7 @@ end
 We can do something more like this:
 
 ```ruby
+# app/controllers/matches_controller.rb
 before_action :resync_matches, only: :index
 
 def index
