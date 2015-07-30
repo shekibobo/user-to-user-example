@@ -132,7 +132,9 @@ With this setup, I can judiciously run my matching algorithm for a user only whe
 ```ruby
 # app/controllers/matches_controller.rb
 def index
-  @matched_users = MatchMaker.matches_for(current_user).page(params[:page]) # takes over 1 second
+  # takes over 1 second
+  @matched_users = MatchMaker.matches_for(current_user)
+                             .page(params[:page])
 end
 ```
 
@@ -143,14 +145,18 @@ We can do something more like this:
 before_action :resync_matches, only: :index
 
 def index
-  @matched_users = current_user.matched_users.page(params[:page]) # several orders of magnitude faster
+  # several orders of magnitude faster
+  @matched_users = current_user.matched_users.page(params[:page])
 end
 
 private
 
 def resync_matches
   # only resync if we have to
-  current_user.matched_users.replace(MatchMaker.matches_for(current_user)) if current_user.matches_outdated?
+  if current_user.matches_outdated?
+    current_user.matched_users
+                .replace(MatchMaker.matches_for(current_user))
+  end
 end
 ```
 
