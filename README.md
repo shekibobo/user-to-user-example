@@ -150,7 +150,7 @@ class User < ActiveRecord::Base
 end
 ```
 
-Keep in mind here that on a `has_many` association, when `destroy` or `delete` methods are called, it will always delete the *link* between the two models, not the models themselves. By adding `dependent: :destroy`, we are telling ActiveRecord that we want to make sure callbacks are called whenever we remove an item from the collection. Running the tests will show that we've successfully passed all of our original specs for the bi-directional, self-referential association.
+Keep in mind here that on a `has_many :through` association, when `destroy` or `delete` methods are called, it will always delete the *link* between the two models, not the models themselves. By adding `dependent: :destroy`, we are telling ActiveRecord that we want to make sure callbacks are called whenever we remove an item from the collection. Running the tests will show that we've successfully passed all of our original specs for the bi-directional, self-referential association.
 
 ## Extra Credit
 
