@@ -3,7 +3,7 @@ Bi-Directional and Self-Referential Associations in Rails
 
 I've been working on an application that works to match users together based on a complex set of criteria (read: big slow database query and in-memory processing). The core usage of the application revolves around these user matches, so I want to make sure that either the algorithm will run very fast or can be cached so that it's not run every time a user visits their matches page.
 
-The most important requirement for our matches is that a match for one user also needs to be a match for the other user. Formally, `∀ x,y ∈ Users: f(x) ∋ y -> f(y) ∋ x`: for all *users* *x* and *y*, if *x*'s *matched_users* contains *y*, then *y*'s *matched_users* must also contain *x*. It should automatically stay in sync from both sides of the relationship. The matching algorithm will do that (slowly), but we also care about some of the metadata behind a match, like how long users have been considered a match.
+The most important requirement for our matches is that a match for one user also needs to be a match for the other user. Formally, `∀ x,y ∈ Users: f(x) ∋ y -> f(y) ∋ x`: for all `users` `x` and `y`, if `matched_users` belonging to `x` contains `y`, then `matched_users` belonging to `y` must also contain `x`. It should automatically stay in sync from both sides of the relationship. The matching algorithm will do that (slowly), but we also care about some of the metadata behind a match, like how long users have been considered a match.
 
 To solve this problem and meet all of the requirements, we can create a bi-directional, self-referential, self-syncing, many-to-many association between users using a `has_many :through` association with a join model to keep track of a user's matches.
 
@@ -15,10 +15,11 @@ class CreateMatches < ActiveRecord::Migration
   def change
     create_table :matches do |t|
       t.references :user, index: true, foreign_key: true
-      t.references :matched_user, index: true
-      t.timestamps
+      t.references :matched_user, index: true, foreign_key: true
+
+      t.timestamps null: false
     end
-    add_foreign_key :matches, :users, column: :matched_user_id
+    add_index :matches, [:user_id, :matched_user_id], unique: true
   end
 end
 
@@ -114,7 +115,8 @@ So in order to make sure we maintain the bi-directional integrity of the associa
 # app/models/user.rb
 class User < ActiveRecord::Base
   has_many :matches
-  has_many :matched_users, through: :matches, dependent: :destroy
+  has_many :matched_users, through: :matches,
+                           dependent: :destroy
 end
 ```
 
@@ -146,7 +148,8 @@ before_action :resync_matches, only: :index
 
 def index
   # several orders of magnitude faster
-  @matched_users = current_user.matched_users.page(params[:page])
+  @matched_users = current_user.matched_users
+                               .page(params[:page])
 end
 
 private
@@ -154,8 +157,8 @@ private
 def resync_matches
   # only resync if we have to
   if current_user.matches_outdated?
-    current_user.matched_users
-                .replace(MatchMaker.matches_for(current_user))
+    new_matches = MatchMaker.matches_for(current_user)
+    current_user.matched_users.replace(new_matches)
   end
 end
 ```
